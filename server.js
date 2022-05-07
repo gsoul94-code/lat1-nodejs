@@ -5,6 +5,11 @@ const BodyParser = require("body-parser")
 
 const app = express()
 
+const http = require("http")
+const server = http.createServer(app)
+const {Server} = require("socket.io")
+const io = new Server(server)
+
 app.use(BodyParser.urlencoded({extended: true}))
 
 app.set("view engine", "ejs")
@@ -21,7 +26,6 @@ db.connect((err) => {
     if(err) throw err
     console.log("DB Connected")
 
-    
     // untuk get data siswa
     app.get("/", (req, res) => {
         const sql = "SELECT * FROM user"
@@ -40,12 +44,24 @@ db.connect((err) => {
         })
     })
 
-   
+    // untuk menuju halaman livechat
+    app.get("/live-chat", (req, res) => {
+        res.render("live-chat", { title : "Live Chat Siswa" })
+    })
     
 })
 
 
+io.on("connection", (socket) => {
+    socket.on("msg", (data) => {
+        const {id, msg} = data
+        socket.broadcast.emit("msg", id, msg)
+        // console.log("data => ", data)
+        // socket.broadcast.emit("msg", data)
+    })
+})
 
-app.listen(8000, () => {
+
+server.listen(8000, () => {
     console.log("Server ready...")
 })
